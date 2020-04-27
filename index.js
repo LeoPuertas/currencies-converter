@@ -25,7 +25,7 @@ var argv = yargs.option('currency', {
                    J for Json
                    C for Exchange Rate`,
         choises: ['T', 'J', 'C'],
-        default: 'J'
+        default: 'C'
     })
     .argv;
 
@@ -43,50 +43,56 @@ let euro = 0;
 let real = 0;
 let peso = 0;
 
-const getDolar = new Promise((resolve, reject) => {
-    https.get(DOLAR_URL, (res) => {
-        res.on('data', (data) => {
-            let resp = JSON.parse(data);
-            let official = resp.find(element => element.casa.nombre === 'Dolar Oficial');
-            let blue = resp.find(element => element.casa.nombre === 'Dolar Blue');
-            if (official && blue) {
-                resolve(
-                    {
-                        officialDolar: parseFloat(official.casa.venta.replace(',', '.')),
-                        blueDolar: parseFloat(blue.casa.venta.replace(',', '.')),
-                    }
-                );
-            }
+const getDolar = async () => {
+    return new Promise((resolve, reject) => {
+        https.get(DOLAR_URL, (res) => {
+            res.on('data', (data) => {
+                let resp = JSON.parse(data);
+                let official = resp.find(element => element.casa.nombre === 'Dolar Oficial');
+                let blue = resp.find(element => element.casa.nombre === 'Dolar Blue');
+                if (official && blue) {
+                    resolve(
+                        {
+                            officialDolar: parseFloat(official.casa.venta.replace(',', '.')),
+                            blueDolar: parseFloat(blue.casa.venta.replace(',', '.')),
+                        }
+                    );
+                }
+            });
+
+        }).on('error', (err) => {
+            reject(err);
         });
-
-    }).on('error', (err) => {
-        reject(err);
     });
-});
+}
 
-const getEuro = new Promise((resolve, reject) => {
-    https.get(EURO_URL, (res) => {
-        res.on('data', (data) => {
-            let resp = JSON.parse(data);
-            resolve(parseFloat(resp[0].dolar.venta.replace(',', '.')));
+const getEuro = async () => {
+    return new Promise((resolve, reject) => {
+        https.get(EURO_URL, (res) => {
+            res.on('data', (data) => {
+                let resp = JSON.parse(data);
+                resolve(parseFloat(resp[0].dolar.venta.replace(',', '.')));
+            });
+
+        }).on('error', (err) => {
+            reject(err);
         });
-
-    }).on('error', (err) => {
-        reject(err);
     });
-});
+}
 
-const getReal = new Promise((resolve, reject) => {
-    https.get(REAL_URL, (res) => {
-        res.on('data', (data) => {
-            let resp = JSON.parse(data);
-            resolve(parseFloat(resp[0].dolar.venta.replace(',', '.')));
+const getReal = async () => {
+    return new Promise((resolve, reject) => {
+        https.get(REAL_URL, (res) => {
+            res.on('data', (data) => {
+                let resp = JSON.parse(data);
+                resolve(parseFloat(resp[0].dolar.venta.replace(',', '.')));
+            });
+
+        }).on('error', (err) => {
+            reject(err);
         });
-
-    }).on('error', (err) => {
-        reject(err);
     });
-});
+}
 
 let getPeso = (currency, value) => {
     switch (currency) {
@@ -138,22 +144,24 @@ let printExchangeRate = () => {
     console.log(currencies);
 }
 
-const currencies = [getDolar, getEuro, getReal];
+const currencies = [getDolar(), getEuro(), getReal()];
 
-Promise
-    .all(currencies)
-    .then(data => {
-        [{ officialDolar, blueDolar }, euro, real] = data;
-        if (printFormat != 'C') {
-            peso = getPeso(currencyType, inputValue);
+(async () => {
+    await Promise
+        .all(currencies)
+        .then(data => {
+            [{ officialDolar, blueDolar }, euro, real] = data;
+            if (printFormat != 'C') {
+                peso = getPeso(currencyType, inputValue);
 
-            if (printFormat === 'T') {
-                printTable();
+                if (printFormat === 'T') {
+                    printTable();
+                } else {
+                    printJson();
+                }
             } else {
-                printJson();
+                printExchangeRate();
             }
-        } else {
-            printExchangeRate();
-        }
-    })
-    .catch(err => console.log(err));
+        })
+        .catch(err => console.log(err));
+})();
