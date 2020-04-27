@@ -5,7 +5,7 @@
 
 ## Usage
 Include the module in your .js file
-![help](https://github.com/LeoPuertas/currency-converter/issues/1#issue-607789701)
+![Image](https://user-images.githubusercontent.com/15334742/80411689-00a3c100-88a3-11ea-9d58-0d1d77ec77aa.png)
 
 ### Examples
 
