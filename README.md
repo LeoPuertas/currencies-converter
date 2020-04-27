@@ -1,4 +1,4 @@
-# currency-converter
+# currencies-converter
 
 ## Install
 `npm i currencies-converter`
